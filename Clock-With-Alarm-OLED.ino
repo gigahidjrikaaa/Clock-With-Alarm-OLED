@@ -23,8 +23,11 @@
 #define SCREEN_ADDRESS 0x3C // Obtained from I2C Scanner. Look for the program in Github.
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // OLED class object declaration
 
-const char* ssid = "Rumah Wisda";
-const char* password = "87654321";
+// const char* ssid = "Rumah Wisda";
+// const char* password = "87654321";
+
+const char* ssid = "Progemink2";
+const char* password = "1q2w3e4r5t";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -37,11 +40,16 @@ int colPins[numCols] = {27, 14, 12, 13};
 int rowPins[numRows] = {32, 33, 25, 26};
 int buzzerPin = 23;
 
+// Store hour and minutes per digit
 int alarmHour[2] = {0, 0};
 int alarmMinute[2] = {0, 0};
+// Flag to mark setting the hour
 bool setHour = true;
+// Mode to mark setting the alarm
 bool setAlarmMode = false;
+// Flag to mark alarm is on
 bool alarmOn = false;
+// Flag to mark silence button has been pressed
 bool silenced = false;
 unsigned long updateTimer = 0;
 unsigned long refreshTimer = 0;
@@ -55,6 +63,7 @@ int hour = timeClient.getHours();
 int minute = timeClient.getMinutes();
 int second = timeClient.getSeconds();
 
+// Current alarm hour as integer
 int alarmHourInt = (alarmHour[0] * 10) + alarmHour[1];
 int alarmMinuteInt = (alarmMinute[0] * 10) + alarmMinute[1];
 
@@ -147,9 +156,14 @@ void alarmCheck()
 
 void setup() {
   Serial.begin(115200);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Wifi Not Connected...");
+    displayCenter("Wifi off", 0, 0);
     delay(1000);
   }
   timeClient.begin();
@@ -160,10 +174,6 @@ void setup() {
   }
   for (int i = 0; i < numCols; i++) {
     pinMode(colPins[i], INPUT_PULLUP); // Set columns as input pins with pull-up resistors
-  }
-  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
   }
   pinMode(buzzerPin, OUTPUT);
   splashScreen();
@@ -252,12 +262,6 @@ void loop() {
             }
           }
         }
-        if(alarmHour[0] > 2) {
-          alarmHour[0] = 2;
-        }
-        if(alarmHour[0] == 2 && alarmHour[1] > 3) {
-          alarmHour[1] = 3;
-        }
       }
       // set alarm minute by pressing the number keys
       else
@@ -288,15 +292,12 @@ void loop() {
             }
           }
         }
-        if(alarmMinute[0] > 5) {
-          alarmMinute[0] = 5;
-        }
       }
     }
   }
   else
   {
-    if(millis() - refreshTimer > 500)
+    if(millis() - refreshTimer > 1000)
     {
       if(!alarmOn)
         displayTime();
